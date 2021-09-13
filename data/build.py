@@ -66,7 +66,7 @@ def build_loader(config):
         mixup_fn = Mixup(
             mixup_alpha=config.AUG.MIXUP, cutmix_alpha=config.AUG.CUTMIX, cutmix_minmax=config.AUG.CUTMIX_MINMAX,
             prob=config.AUG.MIXUP_PROB, switch_prob=config.AUG.MIXUP_SWITCH_PROB, mode=config.AUG.MIXUP_MODE,
-            label_smoothing=config.MODEL.LABEL_SMOOTHING, num_classes=25)
+            label_smoothing=config.MODEL.LABEL_SMOOTHING, num_classes=100)
 
     return dataset_train, dataset_val, data_loader_train, data_loader_val, mixup_fn
 
@@ -102,6 +102,20 @@ def build_transform(is_train, config):
             transform.transforms[0] = transforms.RandomCrop(config.DATA.IMG_SIZE, padding=4)
             transform.transforms.insert(1,transforms.CenterCrop(size=(224,224)))
             transform.transforms.insert(2,transforms.RandomGrayscale(p=0.5))
+        if config.DATA.MANUAL_IMG_PROCESS:
+            from data.utils import letterbox,cropping_image_ramdomly,Random_Dropout
+            transform = transforms.Compose([
+                                    letterbox((0,0,0)),
+                                    transforms.Resize(config.DATA.IMG_SIZE),
+                                    transforms.CenterCrop(config.DATA.IMG_SIZE),
+                                    cropping_image_ramdomly(config.DATA.IMG_SIZE-50,20),
+                                    Random_Dropout(0.1),
+                                    transforms.Resize(config.DATA.IMG_SIZE),
+                                    transforms.RandomHorizontalFlip(p=0.5),
+                                    transforms.RandomVerticalFlip(p=0.5),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
+            ])
         return transform
 
     t = []
@@ -120,4 +134,18 @@ def build_transform(is_train, config):
             )
     t.append(transforms.ToTensor())
     t.append(transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD))
+    if config.DATA.MANUAL_IMG_PROCESS:
+        from data.utils import letterbox
+        t = [
+                                    letterbox(0),
+                                    transforms.Resize(config.DATA.IMG_SIZE),
+                                    transforms.CenterCrop(config.DATA.IMG_SIZE),
+#                                     cropping_image_ramdomly(config.DATA.IMG_SIZE-50,20),
+#                                     Random_Dropout(0.1),
+#                                     transforms.Resize(config.DATA.IMG_SIZE),
+#                                     transforms.RandomHorizontalFlip(p=0.5),
+#                                     transforms.RandomVerticalFlip(p=0.5),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
+            ]
     return transforms.Compose(t)
