@@ -83,7 +83,7 @@ def main(config):
     msg = model.load_state_dict(checkpoint['model'], strict=False)
     logger.info(msg)
     num_features = model.head.in_features
-    model.head = nn.Linear(num_features, 100)
+    model.head = nn.Linear(num_features, config.MODEL.NUM_CLASSES)
    #########
     model.cuda()
     logger.info(str(model))
