@@ -3,7 +3,6 @@
 # Copyright (c) 2021 Microsoft
 # Licensed under The MIT License [see LICENSE for details]
 # Written by Ze Liu
-# Modified by Yunlai Teng
 # --------------------------------------------------------
 
 import os
@@ -32,11 +31,11 @@ try:
     from apex import amp
 except ImportError:
     amp = None
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,0"
 
 def parse_option():
     parser = argparse.ArgumentParser('Swin Transformer training and evaluation script', add_help=False)
-    parser.add_argument('--cfg', type=str, default='./configs/swin_tiny_patch4_window7_224.yaml', metavar="FILE", help='path to config file', )
+    parser.add_argument('--cfg', type=str, default='./configs/swin_base_patch4_window12_384.yaml', metavar="FILE", help='path to config file', )
     parser.add_argument(
         "--opts",
         help="Modify config options by adding 'KEY VALUE' pairs. ",
@@ -46,13 +45,13 @@ def parse_option():
 
     # easy config modification
     parser.add_argument('--batch-size', type=int, default='32',help="batch size for single GPU")
-    parser.add_argument('--data-path', type=str,default='../data_copy', help='path to dataset')
+    parser.add_argument('--data-path', type=str,default='/root/small_section/transformer/dataset/train', help='path to dataset')
     parser.add_argument('--zip', action='store_true', help='use zipped dataset instead of folder dataset')
     parser.add_argument('--cache-mode', type=str, default='part', choices=['no', 'full', 'part'],
                         help='no: no cache, '
                              'full: cache all data, '
                              'part: sharding the dataset into nonoverlapping pieces and only cache one piece')
-    parser.add_argument('--resume', default='./swin_tiny_patch4_window7_224.pth',help='resume from checkpoint')
+    parser.add_argument('--resume', default='./swin_base_patch4_window12_384.pth',help='resume from checkpoint')
     parser.add_argument('--accumulation-steps', type=int, help="gradient accumulation steps")
     parser.add_argument('--use-checkpoint', action='store_true',
                         help="whether to use gradient checkpointing to save memory")
@@ -84,7 +83,7 @@ def main(config):
     msg = model.load_state_dict(checkpoint['model'], strict=False)
     logger.info(msg)
     num_features = model.head.in_features
-    model.head = nn.Linear(num_features, 25)
+    model.head = nn.Linear(num_features, 100)
    #########
     model.cuda()
     logger.info(str(model))
@@ -144,11 +143,12 @@ def main(config):
         train_one_epoch(config, model, criterion, data_loader_train, optimizer, epoch, mixup_fn, lr_scheduler)
         if dist.get_rank() == 0 and (epoch % config.SAVE_FREQ == 0 or epoch == (config.TRAIN.EPOCHS - 1)):
             save_checkpoint(config, epoch, model_without_ddp, max_accuracy, optimizer, lr_scheduler, logger)
-
-        acc1, acc5, loss = validate(config, data_loader_val, model)
-        logger.info(f"Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
-        max_accuracy = max(max_accuracy, acc1)
-        logger.info(f'Max accuracy: {max_accuracy:.2f}%')
+        
+        if epoch % 5 == 0:
+            acc1, acc5, loss = validate(config, data_loader_val, model)
+            logger.info(f"Accuracy of the network on the {len(dataset_val)} test images: {acc1:.1f}%")
+            max_accuracy = max(max_accuracy, acc1)
+            logger.info(f'Max accuracy: {max_accuracy:.2f}%')
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
