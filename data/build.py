@@ -15,7 +15,7 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.data import Mixup
 from timm.data import create_transform
 from timm.data.transforms import _pil_interp
-
+# from PIL import Image
 import config as cfg
 from .cached_image_folder import CachedImageFolder
 from .samplers import SubsetRandomSampler
@@ -140,6 +140,7 @@ def build_transform(is_train, config):
                                     letterbox(0),
                                     transforms.Resize(config.DATA.IMG_SIZE),
                                     transforms.CenterCrop(config.DATA.IMG_SIZE),
+                                    
 #                                     cropping_image_ramdomly(config.DATA.IMG_SIZE-50,20),
 #                                     Random_Dropout(0.1),
 #                                     transforms.Resize(config.DATA.IMG_SIZE),
