@@ -67,7 +67,7 @@ def parse_option():
     parser.add_argument("--local_rank", type=int, required=True, help='local rank for DistributedDataParallel')
 
     args, unparsed = parser.parse_known_args()
-
+    
     config = get_config(args)
 
     return args, config
@@ -350,6 +350,7 @@ if __name__ == '__main__':
         logger.info(f"Full config saved to {path}")
 
     # print config
-    logger.info(config.dump())
-
+    # logger.info(config.dump())
+    # model = build_model(config)
+    # model.to(device)
     main(config)
